@@ -271,6 +271,10 @@ async function fetchQuotesFromServer() {
     }
 }
 
+function syncQuotes() {
+    fetchQuotesFromServer();
+}
+
 function showNotification(message, type = "info") {
     const notificationArea = document.getElementById("notificationArea");
 
