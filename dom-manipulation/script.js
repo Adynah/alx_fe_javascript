@@ -97,9 +97,7 @@ function importFromJsonFile(event) {
 }
 
 function createExportButton() {
-    const exportButton = document.createElement("button");
-    exportButton.textContent = "Export Quotes to JSON";
-
+    const exportButton = document.getElementById("exportButton");
     exportButton.addEventListener("click", () => {
         const json = JSON.stringify(quotes, null, 2);
         const blob = new Blob([json], { type: "application/json" });
@@ -112,14 +110,12 @@ function createExportButton() {
 
         URL.revokeObjectURL(url);
     });
-
-    document.body.appendChild(exportButton);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("newQuote").addEventListener("click", showRandomQuote);
     document.getElementById("addQuoteButton").addEventListener("click", addQuote);
-  document.getElementById("importFile").addEventListener("change", importFromJsonFile);
+    document.getElementById("importFile").addEventListener("change", importFromJsonFile);
 
     showRandomQuote();
     createExportButton();
