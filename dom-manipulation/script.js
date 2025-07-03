@@ -35,8 +35,10 @@ function addQuote() {
   const category = categoryInput.value.trim();
 
   if (text && category) {
-    quotes.push({ text, category });
+    const newQuote = { text, category };
+    quotes.push(newQuote)
     saveQuotesToLocalStorage();
+    postQuoteToAPI(newQuote);
     textInput.value = "";
     categoryInput.value = "";
     showRandomQuote();
@@ -168,12 +170,152 @@ function filterQuotes() {
   quoteDisplay.innerHTML = `<p>"${quote.text}"</p><p><em>[${quote.category}]</em></p>`;
 }
 
+async function fetchQuotesFromAPI() {
+    try {
+        const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+        const data = await response.json();
+
+        const fetchedQuotes = data.slice(20, 25).map(post => ({
+            text: post.title,
+            category: "API"
+        }));
+
+        const newQuotes = fetchedQuotes.filter(apiQuote =>
+            !quotes.some(localQuote => localQuote.text === apiQuote.text)
+        );
+
+        if (newQuotes.length === 0) {
+            showNotification("No new unique quotes found in API fetch.", "info");
+            return;
+        }
+
+        quotes.push(...fetchedQuotes);
+        saveQuotesToLocalStorage();
+        populateCategories();
+        showRandomQuote();
+
+        showNotification(`${newQuotes.length} quote(s) fetched from API.`, "success");
+
+    } catch (error) {
+        console.error("Error fetching quotes:", error);
+        showNotification("Error fetching quotes from API.", "error");
+    }
+}
+
+async function postQuoteToAPI(quote) {
+    try {
+        const response = await fetch("https://jsonplaceholder.typicode.com/posts", {
+            method: "POST",
+            body: JSON.stringify({
+                title: quote.text,
+                body: quote.category,
+                userId: 1
+            }),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            }
+        });
+
+        const data = await response.json();
+        console.log("Posted to API:", data);
+    } catch (error) {
+        console.error("Error posting to API:", error);
+    }
+}
+
+async function syncQuotesFromServer() {
+    try {
+        const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+        const data = await response.json();
+
+        const serverQuotes = data.slice(0, 10).map(post => ({
+            text: post.title,
+            category: "Server"
+        }));
+
+        let updatesMade = 0;
+        let conflicts = [];
+
+        serverQuotes.forEach(serverQuote => {
+            const existingIndex = quotes.findIndex(
+                localQuote => localQuote.text === serverQuote.text
+            );
+
+            if (existingIndex === -1) {
+                quotes.push(serverQuote);
+                updatesMade++;
+            } else if (quotes[existingIndex].category !== serverQuote.category) {
+                conflicts.push({
+                    text: serverQuote.text,
+                    localCategory: quotes[existingIndex].category,
+                    serverCategory: serverQuote.category,
+                    index: existingIndex
+                });
+            }
+        });
+
+        if (conflicts.length > 0) {
+            handleConflicts(conflicts);
+        }
+
+        if (updatesMade > 0) {
+            saveQuotesToLocalStorage();
+            populateCategories();
+            showNotification(`${updatesMade} new quote(s) synced from server.`, "success");
+        } else if (conflicts.length === 0) {
+            showNotification("No new quotes or conflicts from server.", "info");
+        }
+    } catch (error) {
+        console.error("Sync error:", error);
+        showNotification("Failed to sync quotes from server.", "error");
+    }
+}
+
+function showNotification(message, type = "info") {
+    const notificationArea = document.getElementById("notificationArea");
+
+    const colorMap = {
+        info: "#e0f7fa",
+        success: "#d0f8ce",
+        warning: "#fff3cd",
+        error: "#f8d7da"
+    };
+
+    notificationArea.innerHTML = `<div style="background-color:${colorMap[type]}; padding:10px; border-radius:4px;">${message}</div>`;
+
+    setTimeout(() => {
+        notificationArea.innerHTML = "";
+    }, 4000);
+}
+
+function handleConflicts(conflictList) {
+    conflictList.forEach(conflict => {
+        const userChoice = confirm(
+            `Conflict for quote:\n"${conflict.text}"\n\nLocal: ${conflict.localCategory}\nServer: ${conflict.serverCategory}\n\nClick OK to use server version, Cancel to keep local version.`
+        );
+
+        if (userChoice) {
+            quotes[conflict.index].category = conflict.serverCategory;
+            showNotification(`Server version used for: "${conflict.text}"`, "warning");
+        } else {
+            showNotification(`Kept local version of: "${conflict.text}"`, "info");
+        }
+    });
+
+    saveQuotesToLocalStorage();
+    populateCategories();
+    showRandomQuote();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("newQuote").addEventListener("click", showRandomQuote);
     document.getElementById("importFile").addEventListener("change", importFromJsonFile);
     document.getElementById("addQuoteButton").addEventListener("click", addQuote);
+    document.getElementById("fetchQuotes").addEventListener("click", fetchQuotesFromAPI);
 
     showRandomQuote();
     createExportButton();
     populateCategories();
+    syncQuotesFromServer();
+    setInterval(syncQuotesFromServer, 15000);
 });
