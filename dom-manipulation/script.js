@@ -223,7 +223,7 @@ async function postQuoteToAPI(quote) {
     }
 }
 
-async function syncQuotesFromServer() {
+async function fetchQuotesFromServer() {
     try {
         const response = await fetch("https://jsonplaceholder.typicode.com/posts");
         const data = await response.json();
@@ -316,6 +316,6 @@ document.addEventListener("DOMContentLoaded", () => {
     showRandomQuote();
     createExportButton();
     populateCategories();
-    syncQuotesFromServer();
-    setInterval(syncQuotesFromServer, 15000);
+    fetchQuotesFromServer();
+    setInterval(fetchQuotesFromServer, 15000);
 });
