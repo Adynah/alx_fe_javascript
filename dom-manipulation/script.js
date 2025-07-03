@@ -263,7 +263,7 @@ async function fetchQuotesFromServer() {
             populateCategories();
             showNotification(`${updatesMade} new quote(s) synced from server.`, "success");
         } else if (conflicts.length === 0) {
-            showNotification("No new quotes or conflicts from server.", "info");
+            showNotification("Quotes synced with server!", "info");
         }
     } catch (error) {
         console.error("Sync error:", error);
