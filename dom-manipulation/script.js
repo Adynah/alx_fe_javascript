@@ -1,11 +1,11 @@
 let quotes = [{text: "The journey of a thousand miles begins with one step.", category: "Motivation"}];
 
-function displayRandomQuote() {
+function showRandomQuote() {
     const quoteDisplay = document.getElementById("quoteDisplay");
     const randomIndex = Math.floor(Math.random() * quotes.length);
     const quote = quotes[randomIndex];
 
-    quoteDisplay.textContent = `"${quote.text}" - [${quote.category}]`;
+    quoteDisplay.innerHTML = `<p>"${quote.text}"</p><p><em>[${quote.category}]</em></p>`;
 }
 
 function createAddQuoteForm() {
@@ -47,8 +47,8 @@ function createAddQuoteForm() {
 
 document.addEventListener("DOMContentLoaded", () => {
     const quoteButton = document.getElementById("newQuote");
-    quoteButton.addEventListener("click", displayRandomQuote);
+    quoteButton.addEventListener("click", showRandomQuote);
 
-    displayRandomQuote();
+    showRandomQuote();
     createAddQuoteForm();
 });
